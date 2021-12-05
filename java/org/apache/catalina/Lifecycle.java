@@ -175,7 +175,7 @@ public interface Lifecycle {
 
     /**
      * Add a LifecycleEvent listener to this component.
-     *
+     * 添加监听器
      * @param listener The listener to add
      */
     public void addLifecycleListener(LifecycleListener listener);
