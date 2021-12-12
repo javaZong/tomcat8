@@ -19,15 +19,16 @@ public class TestApplication{
         Tomcat tomcat = new Tomcat();
         tomcat.setPort(TOMCAT_PORT);
         tomcat.setHostname(TOMCAT_HOSTNAME);
-        tomcat.setBaseDir("."); // tomcat 信息保存在项目下
+        // tomcat 信息保存在项目下
+        tomcat.setBaseDir(".");
         StandardContext myContext = null;
-        System.out.println(System.getProperty("user.dir"));
+        System.out.println("file:"+System.getProperty("user.dir"));
         myContext = (StandardContext) tomcat.addWebapp("/tomcat", System.getProperty("user.dir") + File.separator + WEBAPP_PATH);
         myContext.setReloadable(false);
         // 上下文监听器
         myContext.addLifecycleListener(new AprLifecycleListener());
         // 注册servlet
-            tomcat.addServlet("/tomcat", "myFirstServlet",new MyFirstServlet());
+        tomcat.addServlet("/tomcat", "myFirstServlet",new MyFirstServlet());
         // servlet mapping
         myContext.addServletMappingDecoded("/first.do", "myFirstServlet");
         tomcat.start();
