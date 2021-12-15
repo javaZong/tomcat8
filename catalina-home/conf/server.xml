@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!-- Catalina 是 Tomcat 中的一个重要组件，它负责的是解析 Tomcat 的配置文件（server.xml），
-以此来创建服务器 Server 组件并进行管理。下面是Tomcat的conf目录下大名鼎鼎server.xml核心配置的内容结构，
+以此来创建服务器 Server 组件并进行管理。
 Server-Service-(Connector+Engine)，
 在GlobalNamingResouce 域中可以定义全局资源 tomcat-user.xml，
 在web.xml文件中也有常见如session-config配置session超时时间默认是30分钟
