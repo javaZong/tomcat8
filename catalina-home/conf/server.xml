@@ -1,59 +1,51 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<!-- port: 接收shutdown指令的端口，默认仅允许通过本机访问，默认为8005；
+     shutdown：发往此Server用于实现关闭tomcat实例的命令字符串，默认为SHUTDOWN；
+     使用方式：telnet localhost 8005， 输入SHUTDOWN即可关闭tomcat
 
-<!-- Catalina 是 Tomcat 中的一个重要组件，它负责的是解析 Tomcat 的配置文件（server.xml），
-以此来创建服务器 Server 组件并进行管理。
-Server-Service-(Connector+Engine)，
-在GlobalNamingResouce 域中可以定义全局资源 tomcat-user.xml，
-在web.xml文件中也有常见如session-config配置session超时时间默认是30分钟
-
-
-Server ：代表了一个 Tomcat 实例，包含了 Servlet 容器以及其他组件，
-负责组装并启动 Servlet 引擎、Tomcat 连接器。每个Tomcat都只有一个Server，表示整个服务环境。
--->
+     如果你不配置这两个属性，Tomcat的这种关闭机制还是会运行的。你不想暴露这种关闭机制的
+     话，可以将端口设置成poer=-1，shutdown设置成一个复杂的字符串，比如shutdown="xscdeww#12"
+ -->
 <Server port="8005" shutdown="SHUTDOWN">
-  <Listener className="org.apache.catalina.startup.VersionLoggerListener"/>
-  <!-- Security listener. Documentation at /docs/config/listeners.html
-  <Listener className="org.apache.catalina.security.SecurityListener" />
-  -->
-  <!-- APR library loader. Documentation at /docs/apr.html -->
-  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on"/>
-  <!-- Prevent memory leaks due to use of particular java/javax APIs-->
-  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
-  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener"/>
-  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener"/>
+  <!-- 默认配置的Listener -->
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
 
-  <!-- Global JNDI resources
-       Documentation at /docs/jndi-resources-howto.html
-  -->
+  <!-- 应用于整个服务器的JNDI映射，此可以避免每个Web应用程序都需要在各自的web.xml创建，这在web应用程序        以WAR的形式存在时尤为有用。
+   -->
   <GlobalNamingResources>
-    <!-- Editable user database that can also be used by
-         UserDatabaseRealm to authenticate users
-    -->
     <Resource name="UserDatabase" auth="Container"
               type="org.apache.catalina.UserDatabase"
               description="User database that can be updated and saved"
               factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
-              pathname="conf/tomcat-users.xml"/>
+              pathname="conf/tomcat-users.xml" />
   </GlobalNamingResources>
 
-  <!--
-  一个Server中可以有多个Service。Server就管理多个Service。
-  tomcat源码中服务继承自LifeCycle，tomcat服务组件顶层接口，有唯一实现StandardServer。
-Service：服务是 Server 内部的组件，一个Server中可以有多个Service，它将若干个 Connector 组件绑定到一个 Container，
-每一个Service中可以有多个Connector和一个Container(Engine)。
-Connector主要用来接收请求，解析请求内容，封装request和response，然后将准备好的数据交给Container处理。
-Container就是我们常说的容器，里面可以有多个Host,一个host表示一个虚拟主机，就是一个对应一个WebApps.
-最后Container处理完请求之后会将响应内容返回给Connecter,再由Connecter返回给客户端。
-Executor 执行器：tomcat线程池的配置，提供给Connector。
+  <!-- Service是多个Connector和单个Container的组合。Container是一个抽象的概念，由Engine, Realm,        Valve和Hosts主组组成。
+       在server.xml配置文件中可以同时配置多个Service标签
    -->
   <Service name="Catalina">
 
-    <!--The connectors can use a shared executor, you can define one or more named thread pools-->
-    <!--
-    <Executor name="tomcatThreadPool" namePrefix="catalina-exec-"
-        maxThreads="150" minSpareThreads="4"/>
-    -->
+    <!--The connectors can use a shared executor, you can define one or more named thread         pools
+     -->
+    <!-- 默认情况下，每个连接器connector会使用自己创建的线程池，我们也可以配置多个线程池让连接器共享-->
+    <!-- 如果想让连接器connector组件使用这个线程池，需要在连接器组件中配置executor属性.
+         另外，Executor元素的配置应该放在Connector配置的前面，这样才会先加载Executor的配置。
 
+         Executor的主要属性包括：
+          - name：该线程池的名称id
+          - maxThreads：线程池中最大活跃线程数，默认值200（Tomcat7和8都是）
+          - minSpareThreads：线程池中保持的最小线程数，最小值是25
+          - maxIdleTime：线程空闲的最大时间，当空闲超过该值时关闭线程（除非线程数小于
+                         minSpareThreads），单位是ms，默认值60000（1分钟）
+          - daemon：是否后台线程，默认值true
+          - threadPriority：线程优先级，默认值5
+          - namePrefix：线程名字的前缀，线程池中线程名字为：namePrefix+线程编号
+     -->
+    <Executor name="tomcatThreadPool" namePrefix="catalina-exec-"
+              maxThreads="150" minSpareThreads="4"/>
 
     <!-- A "Connector" represents an endpoint by which requests are received
          and responses are returned. Documentation at :
@@ -62,16 +54,28 @@ Executor 执行器：tomcat线程池的配置，提供给Connector。
          APR (HTTP/AJP) Connector: /docs/apr.html
          Define a non-SSL/TLS HTTP/1.1 Connector on port 8080
     -->
+    <!-- Connector是Tomcat中请求接收和响应返回的端点，Tomcat中支持HTTP、AJP和APR等协议。
+         下面的配置定义了一个支持Http协议的连接器，监听8080端口
+
+         Connector组件支持以下组件的配置：
+          - address：指定连接器监听的地址，默认为所有地址，即0.0.0.0；
+          - port：监听的端口，默认为0；
+          - protocol：连接器使用的协议，默认为HTTP/1.1，定义AJP协议时通常为AJP/1.3；
+          - connectionTimeout：等待客户端发送请求的超时时间，单位为毫秒，默认为60000，即1分钟；
+          - maxThreads：支持的最大并发连接数，默认为200；
+          - redirectPort：如果某连接器支持的协议是HTTP，当接收客户端发来的HTTPS请求时，
+                          则转发至此属性定义的端口；
+          - enableLookups：是否通过request.getRemoteHost()进行DNS查询以获取客户端的主机名；
+                           默认为true；
+          - acceptCount：设置等待队列的最大长度；
+          - executor：指定共享的线程池组件；
+     -->
     <Connector port="8080" protocol="HTTP/1.1"
                connectionTimeout="20000"
-               redirectPort="8443"/>
-    <!-- A "Connector" using the shared thread pool-->
-    <!--
-    <Connector executor="tomcatThreadPool"
-               port="8080" protocol="HTTP/1.1"
-               connectionTimeout="20000"
-               redirectPort="8443" />
-    -->
+               redirectPort="8443"
+               executor="tomcatThreadPool" />
+
+    <!-- 下面是进行支持Https的配置 -->
     <!-- Define an SSL/TLS HTTP/1.1 Connector on port 8443
          This connector uses the NIO implementation. The default
          SSLImplementation will depend on the presence of the APR/native
@@ -107,7 +111,6 @@ Executor 执行器：tomcat线程池的配置，提供给Connector。
         </SSLHostConfig>
     </Connector>
     -->
-
     <!-- Define an AJP 1.3 Connector on port 8009 -->
     <!--
     <Connector protocol="AJP/1.3"
@@ -116,6 +119,10 @@ Executor 执行器：tomcat线程池的配置，提供给Connector。
                redirectPort="8443" />
     -->
 
+
+    <!-- Tomcat内部有4个级别的容器，分别是Engine、Host、Context和Wrapper。Engine代表全局Servlet引擎，
+    每个Service组件只能包含一个Engine容器组件，但Engine组件可以包含若干Host容器组件
+     -->
     <!-- An Engine represents the entry point (within Catalina) that processes
          every request.  The Engine implementation for Tomcat stand alone
          analyzes the HTTP headers included with the request, and passes them
@@ -145,7 +152,10 @@ Executor 执行器：tomcat线程池的配置，提供给Connector。
                resourceName="UserDatabase"/>
       </Realm>
 
-      <Host name="localhost" appBase="webapps"
+      <!-- 配置虚拟主机，可以配置多个-->
+      <!-- 一个Host下面可以有多个Context，也就是可以部署多个Webapp应用,一个webapp对应一个Context,用不同的ContextPath区分
+      -->
+      <Host name="localhost"  appBase="webapps"
             unpackWARs="true" autoDeploy="true">
 
         <!-- SingleSignOn valve, share authentication between web applications
@@ -159,8 +169,9 @@ Executor 执行器：tomcat线程池的配置，提供给Connector。
              Note: The pattern used is equivalent to using pattern="common" -->
         <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
                prefix="localhost_access_log" suffix=".txt"
-               pattern="%h %l %u %t &quot;%r&quot; %s %b"/>
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
 
+        <!-- Host下面也可以配置Context相关的配置 -->
       </Host>
     </Engine>
   </Service>
